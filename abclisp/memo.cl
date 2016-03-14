@@ -100,3 +100,107 @@
         (if (funcall f n p) (push n l1) (push n l2)))
       (append (quick-sort f l1) (cons p (quick-sort f l2))))))
 
+(defun fibo-org (x)
+  (if (or (= 0 x) (= 1 x))
+      1
+      (+ (fibo (- x 1)) (fibo (- x 2)))))
+
+(setq *fibo-table-limit* 100
+      *fibo-table* (make-array (1+ *fibo-table-limit*)))
+
+(defun fibo1 (n)
+  (if (<= 0 n 1)
+      1
+      (if (aref *fibo-table* n)
+          (aref *fibo-table* n)
+          (setf (aref *fibo-table* n)
+                (+ (fibo1 (1- n)) (fibo1 (- n 2)))))))
+
+(defun fobo (n)
+  (if (<= 0 n *fibo-table-limit*)
+      (fibo1 n)))
+
+(defun init-stack (n)
+  (setq *stack-size* n
+        *top* 0
+        *stack* (make-array n)))
+
+(defun push-down (data)
+  (when (< *top* *stack-size*)
+    (setf (aref *stack* *top*) data)
+    (incf *top*)))
+
+(defun pop-up ()
+  (when (plusp *top*)
+    (decf *top*)
+    (aref *stack* *top*)))
+
+(defun prime-p (n k prime-list count)
+  (dotimes (m count)
+    (cond ((zerop (mod n (aref prime-list m))) (return))
+          ((<= k (aref prime-list m)) (return t)))))
+
+(defun prime-vector (n)
+  (let ((prime-list (make-array n))
+        (count 0))
+    (setf (aref prime-list count) 2)
+    (incf count)
+    (do ((m 3 (+ m 2)))
+        ((<= n count) prime-list)
+      (when (prime-p m (sqrt m) prime-list count)
+        (setf (aref prime-list count) m)
+        (incf count)))))
+
+(defun pascal-sub (num-list)
+  (if (second num-list)
+      (cons (+ (first num-list) (second num-list))
+            (pascal-sub (rest num-list)))
+      '(1)))
+
+(defun pascal-list (n)
+  (let (buf)
+    (dotimes (i n)
+      (setq buf (pascal-sub (cons 0 buf)))
+      (print buf))))
+
+(defun pascal-vector (n)
+  (let ((buff (make-array (1+ n) :initial-element 0)))
+    (setf (aref buff 1) 1)
+    (dotimes (i n)
+      (do ((j (1+ i) (1- j)))
+          ((zerop j))
+        (format t " ~3D" (setf (aref buff j)
+                               (+ (aref buff j)(aref buff (1- j))))))
+      (terpri))))
+
+(defun my-rev-sub (l z)
+  (if (atom l)
+      z
+      (my-rev-sub (cdr l) (cons (car l) z))))
+
+(defun my-reverse (l)
+  (my-rev-sub l nil))
+
+(defun my-reverse (l &optional z)
+  (if (atom l)
+      z
+      (my-reverse (cdr l) (cons (car l) z))))
+
+(defun merge-list (f l1 l2)
+  (cond ((atom l1) l2)
+        ((atom l2) l1)
+        ((funcall f (car l1) (car l2))
+         (cons (car l1) (merge-list f (cdr l1) l2)))
+        (t (cons (car l2) (merge-list f l1 (cdr l2))))))
+
+(defun merge-sort (f l n)
+  (cond ((= n 1) (list (car l)))
+        ((= n 2)
+         (let ((x (first l)) (y (second l)))
+           (if (funcall f x y) (list x y) (list y x))))
+        (t (let ((m (truncate n 2)))
+             (merge-list f
+                         (merge-sort f l m)
+                         (merge-sort f (nthcdr m l) (- n m)))))))
+
+
