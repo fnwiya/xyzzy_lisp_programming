@@ -203,4 +203,42 @@
                          (merge-sort f l m)
                          (merge-sort f (nthcdr m l) (- n m)))))))
 
+(defun fibo (n &optional (a1 1)(a2 0))
+  (if (< n 1)
+      a1
+      (fibo (1- n)(+ a1 a2) a1)))
+
+(defmacro sum-macro (x) (cons '+ x))
+
+(defmacro push-macro (item place)
+  (list 'setq
+        place
+        (list 'cons item place)))
+
+(defmacro pop-macro (place)
+  (list 'prog1
+        (list 'car place)
+        (list 'setq
+              place
+              (list 'cdr place))))
+
+(defmacro push-macro2 (item place)
+  `(setq ,place (cons ,item ,place)))
+
+(defmacro pop-macro2 (place)
+  `(prog1 (car ,place)
+     (setq ,place (cdr ,place))))
+
+(defmacro define (args-list &rest body)
+  `(defun ,(car args-list) ,(cdr args-list) ,@body))
+
+(defun my-union (x y)
+  (cond ((atom x) y)
+        ((member (car x) y) (my-union (cdr x) y))
+        (t (cons (car x) (my-union (cdr x) y)))))
+
+(defun my-intersection (x y)
+  (cond ((atom x) nil)
+        ((member (car x) y) (cons (car x) (my-intersection (cdr x) y)))
+        (t (my-intersection (cdr x) y))))
 
