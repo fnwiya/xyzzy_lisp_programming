@@ -242,3 +242,103 @@
         ((member (car x) y) (cons (car x) (my-intersection (cdr x) y)))
         (t (my-intersection (cdr x) y))))
 
+(defstruct (WordCount (:conc-name get-))
+  (word nil)
+  (count 1))
+
+(defun word-count (filename)
+  (with-open-file (in filename :direction :input)
+    (let (buffer word-list wc)
+      (while (setq buffer (read-line in nil))
+        (dolist (word (split-string buffer " \t"))
+          (if (setq wc (find word word-list :key #'get-word :test #'equal))
+              (incf (get-count wc))
+              (push (make-WordCount :word word) word-list))))
+      (print-word-count word-list))))
+
+(defun print-word-count (word-list)
+  (dolist (wc (sort word-list #'string< :key #'get-word))
+    (format t "~A ~D~%" (get-word wc) (get-count wc))))
+
+(defun binary-search (item table)
+  (let ((low 0) (high (1- (length table))) middle)
+    (while (<= low high)
+      (setq middle (truncate (+ low high) 2))
+      (cond ((= (aref table middle) item)
+             (return item))
+            ((< (aref table middle) item)
+             (setq low (1+ middle)))
+            (t (setq high (1- middle)))))))
+
+(defun make-point ()
+  (let (point)
+    (dotimes (x 3 point)
+      (push (random 100) point))))
+
+(defun make-data (n)
+  (let ((count 0) point buffer)
+    (while (< count n)
+      (setq point (make-point))
+      (unless (find point buffer :test #'equal)
+        (push point buffer)
+        (incf count)))
+    buffer))
+
+(defconstant *hash-size* 4001)
+
+(defun hash-func (point)
+  (let ((value 0))
+    (dolist (x point (mod value *hash-size*))
+      (setq value (+ (* value 100) x)))))
+
+(defun insert-hash (point hash-table)
+  (let ((value (hash-func point)))
+    (unless (find point (aref hash-table value) :test #'equal)
+      (push point (aref hash-table value)))))
+
+(defun make-data-fast (n)
+  (let ((hash-table (make-array *hash-size*))
+        (count 0) buffer point)
+    (while (< count n)
+      (setq point (make-point))
+      (when (insert-hash point hash-table)
+        (push point buffer)
+        (incf count)))
+    buffer))
+
+(defstruct Queue (front nil)(rear nil))
+
+(defun enqueue (queue item)
+  (let ((new-cell (list item)))
+    (if (Queue-front queue)
+        (setf (cdr (Queue-rear queue)) new-cell)
+        (setf (Queue-front queue) new-cell))
+    (setf (Queue-rear queue) new-cell)))
+
+(defun dequeue (queue)
+  (if (Queue-front queue)
+      (prog1
+          (pop (Queue-front queue))
+        (unless (Queue-front queue)
+          (setf (Queue-rear queue) nil)))))
+
+(defun circular-list-p (l)
+  (let ((fast l)(slow l))
+    (loop
+         (setq fast (cddr fast)
+               slow (cdr slow))
+       (cond ((endp fast) (return))
+             ((eq fast slow) (return t))))))
+
+(defun make-gen-fibo ()
+  (let ((a0 1) (a1 0) (a2 0))
+    #'(lambda () (prog1 a0
+                   (setq a2 a1 a1 a0)
+                   (setq a0 (+ a1 a2))))))
+
+(defstruct Queue
+  (front  0)
+  (rear   0)
+  (count  0)
+  (buffer (make-array 16)))
+
