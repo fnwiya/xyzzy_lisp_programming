@@ -425,3 +425,87 @@
                (apply #'> value num-list)
                (= (apply #'+ value num-list) 999))
           (format t "~D + ~D + ~D = 999~%" (second num-list) (first num-list) value))))
+
+(defvar *pattern* #(#x0000023 #x0000047 #x000008e #x000011c #x0000218
+                    #x0000461 #x00008e2 #x00011c4 #x0002388 #x0004310
+                    #x0008c20 #x0011c40 #x0023880 #x0047100 #x0086200
+                    #x0118400 #x0238800 #x0471000 #x08e2000 #x10c4000
+                    #x0308000 #x0710000 #x0e20000 #x1c40000 #x1880000))
+
+(defun solve (board)
+  (dotimes (i 32)
+    (let ((new-board board) pushed-button)
+      (dotimes (j 5)
+        (when (logbitp j i)
+          (push j pushed-button)
+          (setq new-board (logxor new-board (aref *pattern* j)))))
+      (dotimes (j 20)
+        (when (logbitp j new-board)
+          (push (+ j 5) pushed-button)
+          (setq new-board (logxor new-board (aref *pattern* (+ j 5))))))
+      (if (zerop new-board)
+          (print-answer (reverse pushed-button))))))
+
+(defun print-answer (pushed-button)
+  (dotimes (x 25 (terpri))
+    (if (zerop (mod x 5)) (terpri))
+    (cond ((and pushed-button
+                (= x (car pushed-button)))
+           (princ "@")
+           (pop pushed-button))
+          (t (princ "x")))))
+
+(defun max-position (nim)
+  (let ((num -1) pos)
+    (dotimes (x 3 (values pos 1))
+      (if (< num (nth x nim))
+          (setq pos x
+                num (nth x nim))))))
+
+(defun safe-position (nim)
+  (let ((nim-sum (apply #'logxor nim)) num)
+    (dotimes (x 3)
+      (setq num (- (nth x nim) (logxor (nth x nim) nim-sum)))
+      (if (plusp num)
+          (return (values x num))))))
+
+(defun move-com (nim)
+  (format t "~%~S my turn~%" nim)
+  (multiple-value-bind
+        (pos num)
+      (if (zerop (apply #'logxor nim))
+          (max-position nim)
+          (safe-position nim))
+    (remove-stone nim pos num)))
+
+(defun make-expr (n expr)
+  (if (= n 10)
+      (check (reverse expr))
+      (dolist (op '(+ - @))
+        (make-expr (1+ n) (cons n (cons op expr))))))
+
+(defun check (expr)
+  (setq *expr* expr)
+  (let ((num (get-first-number)))
+    (while *expr*
+      (case (pop *expr*)
+        (+ (incf num (get-number)))
+        (- (decf num (get-number)))))
+    (if (= num 100)
+        (print expr))))
+
+(defun get-first-number ()
+  (cond ((integerp (car *expr*))
+         (get-number))
+        ((eq '- (car *expr*))
+         (pop *expr*)
+         (- (get-number)))))
+
+(defun get-number ()
+  (let ((num (pop *expr*)))
+    (while (eq '@ (car *expr*))
+      (pop *expr*)
+      (setq num (+ (* num 10) (pop *expr*))))
+    num))
+
+
