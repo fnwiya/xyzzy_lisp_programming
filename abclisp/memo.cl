@@ -508,4 +508,138 @@
       (setq num (+ (* num 10) (pop *expr*))))
     num))
 
+(defvar *adjacent* #((1 2 3)       ; 0
+                     (0 3 4)       ; 1
+                     (0 3 5)       ; 2
+                     (0 1 2 4 5 6) ; 3
+                     (1 3 6)       ; 4
+                     (2 3 6)       ; 5
+                     (3 4 5)))     ; 6
+
+(defvar *state* (make-array 5040))
+(defvar *prev* (make-array 5040))
+(defvar *space* (make-array 5040))
+
+(defun move-piece (piece board)
+  (cond ((null board) nil)
+        ((= piece (car board))
+         (cons 0 (move-piece piece (cdr board))))
+        ((= 0 (car board))
+         (cons piece (move-piece piece (cdr board))))
+        (t (cons (car board) (move-piece piece (cdr board))))))
+
+(defun solve-b (start goal)
+  (let ((rear 1) (front 0))
+    (setf (aref *state* 0) start
+          (aref *prev* 0) -1
+          (aref *space* 0) (position 0 start))
+    (while (< front rear)
+      (let ((space (aref *space* front))
+            (board (aref *state* front)) new-board)
+        (dolist (pos (aref *adjacent* space))
+          (setq new-board (move-piece (nth pos board) board))
+          (unless (find new-board *state* :end rear :test #'equal)
+            (setf (aref *state* rear) new-board
+                  (aref *space* rear) pos
+                  (aref *prev* rear) front)
+            (incf rear)
+            (when (equal new-board goal)
+              (print-answer (1- rear))
+              (return-from solve-b)))))
+      (incf front))))
+
+(defun print-answer (pos)
+  (if (/= pos 0)
+      (print-answer (aref *prev* pos)))
+  (print (aref *state* pos)))
+
+(defvar *direction* (make-array 5040))  ; 探索の方向
+
+(defun solve-b1 (start goal)
+  (let ((rear 2) (front 0))
+    (setf (aref *state* 0) start
+          (aref *prev* 0) -1
+          (aref *space* 0) (position 0 start)
+          (aref *direction* 0) 'forward
+          (aref *state* 1) goal
+          (aref *prev* 1) -1
+          (aref *space* 1) (position 0 goal)
+          (aref *direction* 1) 'backward)
+    (while (< front rear)
+      (let ((space (aref *space* front))
+            (board (aref *state* front)) new-board x)
+        (dolist (pos (aref *adjacent* space))
+          (setq new-board (move-piece (nth pos board) board))
+          (setq x (position new-board *state* :end rear :test #'equal))
+          (cond ((null x)
+                 (setf (aref *state* rear) new-board
+                       (aref *space* rear) pos
+                       (aref *prev* rear) front
+                       (aref *direction* rear) (aref *direction* front))
+                 (incf rear))
+                ((not (eq (aref *direction* x) (aref *direction* front)))
+                 (print-answer1 front x)
+                 (return-from solve-b1)))))
+      (incf front))))
+
+(defun print-answer-forward (pos)
+  (if (/= pos 0)
+      (print-answer-forward (aref *prev* pos)))
+  (print (aref *state* pos)))
+
+(defun print-answer-backward (pos)
+  (while (/= pos -1)
+    (print (aref *state* pos))
+    (setq pos (aref *prev* pos))))
+
+(defun print-answer1 (p1 p2)
+  (cond ((eq (aref *direction* p1) 'forward)
+         (print-answer-forward p1)
+         (print-answer-backward p2))
+        (t (print-answer-forward p2)
+           (print-answer-backward p1))))
+
+(defvar *state* (make-array 140))
+(defvar *prev-state* (make-array 140))
+(defvar *space-postion* (make-array 140))
+
+(defun move-position (state)
+  (let (result)
+    (dotimes (i 7 result)
+      (if (and (aref state i) (aref state (1+ i)))
+          (push i result)))))
+
+(defun move-stone (front rear n)
+  (let ((new-state (copy-seq (aref *state* front)))
+        (space (aref *space-postion* front)))
+    (setf (aref new-state space)      (aref new-state n)
+          (aref new-state (1+ space)) (aref new-state (1+ n))
+          (aref new-state n)          nil
+          (aref new-state (1+ n))     nil
+          (aref *space-postion* rear) n
+          (aref *prev-state* rear)    front
+          (aref *state* rear)         new-state)))
+
+(defun solve-max ()
+  (let ((rear 1) (front 0))
+    (setf (aref *state* 0) '(1 2 3 4 5 6 0)
+          (aref *move* 0) 0
+          (aref *space* 0) 6
+          (aref *piece* 0) 0)
+    (while (< front rear)
+      (let ((space (aref *space* front))
+            (board (aref *state* front))
+            (prev (aref *piece* front)) piece new-board)
+        (dolist (pos (aref *adjacent* space))
+          (setq piece (nth pos board))
+          (when (/= piece prev)
+            (setq new-board (move-piece piece board))
+            (unless (find new-board *state* :end rear :test #'equal)
+              (setf (aref *state* rear) new-board
+                    (aref *space* rear) pos
+                    (aref *move* rear) (1+ (aref *move* front))
+                    (aref *piece* rear) piece)
+              (incf rear)))))
+      (incf front))
+    (print-answer-max (1- rear))))
 
