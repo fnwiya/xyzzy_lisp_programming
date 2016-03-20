@@ -643,3 +643,23 @@
       (incf front))
     (print-answer-max (1- rear))))
 
+(defun count-word (word filename)
+  (with-open-file (in filename :direction :input)
+    (let ((word-table (make-hash-table :test #'equal))
+          buffer find-index start-index)
+      (while (setq buffer (read-line in nil))
+             (setq start-index 0)
+             (while (setq find-index (string-match word buffer start-index))
+                    (setq start-index (match-end 0))
+                    (incf (gethash (subseq buffer find-index start-index) word-table 0))))
+      (print-word-table word-table))))
+
+(defun print-word-table (word-table)
+  (let (temp)
+    (maphash #'(lambda (key value) (push (cons key value) temp))
+             word-table)
+    (map nil
+         #'(lambda (x) (format t "~A ~A~%" (car x) (cdr x)))
+         (sort temp #'> :key #'cdr))))
+
+
