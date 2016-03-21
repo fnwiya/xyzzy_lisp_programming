@@ -662,4 +662,21 @@
          #'(lambda (x) (format t "~A ~A~%" (car x) (cdr x)))
          (sort temp #'> :key #'cdr))))
 
+(defun solve1 ()
+  (let ((table (make-array 254016) j k l)
+        (dotimes (n 10)
+          (if (= n (aref *fact-table* n))
+              (print n))
+          (setf (aref table n) (aref *fact-table* n)))
+        (do ((n 1 (1+ n)))
+            ((>= n 254016))
+          (setq l (* n 10))
+          (dotimes (m 10)
+            (setq k (+ (aref table n) (aref table m))
+                  j (+ l m))
+            (if (< j 254016)
+                (setf (aref table j) k))
+            (if (= k j)
+                (print k)))))))
+
 
