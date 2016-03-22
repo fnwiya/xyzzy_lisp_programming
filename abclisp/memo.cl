@@ -679,4 +679,25 @@
             (if (= k j)
                 (print k)))))))
 
+(defun main ()
+  (with-open-file (out "test.dat" :direction :output)
+    (do ((i 1 (1+ i)))
+        ((> i 100))
+      (format out "~D, ~D, ~D~%" i (* i i) (* i i i)))))
+
+(defun search-tree (root value)
+  (check-tree-p root)
+  (let ((node (Tree-root root))
+        (func (Tree-compare root)))
+    (while node
+           (case (funcall func value (Node-value node))
+             (0 (return t))
+             (1 (setq node (Node-right node)))
+             (-1 (setq node (Node-left node)))))))
+
+(defun check-tree-p (data)
+  (unless (Tree-p data)
+    (error "set Tree at args"))
+  (unless (Tree-compare data)
+    (error "set compare-func")))
 
