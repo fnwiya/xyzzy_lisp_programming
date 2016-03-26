@@ -701,3 +701,18 @@
   (unless (Tree-compare data)
     (error "set compare-func")))
 
+(defun variablep (pattern)
+  (and (symbolp pattern)
+       (char= #\? (char (string pattern) 0))))
+
+(defun add-binding (var value binding)
+  (cons (cons var value) binding))
+
+(defun equal-list (list1 list2)
+  (cond ((and (atom list1) (atom list2))
+         (eql list1 list2))
+        ((and (consp list1) (consp list2))
+         (if (equal-list (car list1) (car list2))
+             (equal-list (cdr list1) (cdr list2))))
+        (t nil)))
+
